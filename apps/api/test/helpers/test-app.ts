@@ -25,7 +25,17 @@ export async function createTestApp(
   }
 
   const moduleRef = await builder.compile();
-  const app = moduleRef.createNestApplication();
+
+  // Silent by default. Several tests deliberately provoke failures and assert
+  // the response, so their stack traces would otherwise read as suite failures
+  // to anyone running `pnpm test`. Set TEST_LOGS=1 to get them back when
+  // debugging.
+  // The option has to be omitted entirely to keep the default logger; passing
+  // `logger: undefined` is not the same as not passing it.
+  const app =
+    process.env.TEST_LOGS === '1'
+      ? moduleRef.createNestApplication()
+      : moduleRef.createNestApplication({ logger: false });
   await app.init();
 
   const prisma = app.get(PrismaService);

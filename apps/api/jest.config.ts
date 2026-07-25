@@ -20,6 +20,9 @@ const config: Config = {
 
   testTimeout: 30_000,
   clearMocks: true,
+  // Tests spy on real application services (the Prisma client, the Provider
+  // client) rather than replacing them, so originals must come back afterwards.
+  restoreMocks: true,
 };
 
 export default config;
