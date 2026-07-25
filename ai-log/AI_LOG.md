@@ -2192,7 +2192,7 @@
 
   Want me to commit this?
 
-✻ Sautéed for 16m 26s
+✻ Crunched for 16m 26s
 
 ※ recap: Goal: build the partner self-service onboarding system. Phase 0 scaffolding is done and verified — monorepo, Prisma schema with migrations, and a passing test harness against local Postgres. Next: your approval to commit those 38 staged files. (disable recaps in /config)
 
@@ -2262,7 +2262,7 @@
 
   Still holding on the commit until you approve it.
 
-✻ Cooked for 4s
+✻ Worked for 4s
 
 ❯ yes, commit it, all tested already                                            
 
@@ -2765,7 +2765,7 @@
 
   Commit this?
 
-✻ Cogitated for 6m 26s
+✻ Brewed for 6m 26s
 
 ❯ yes, commit these changes                                                     
 
@@ -3694,7 +3694,7 @@
 
   Commit this?
 
-✻ Crunched for 9m 39s
+✻ Cogitated for 9m 39s
 
 ※ recap: Building the partner onboarding system in phases; Phases 0 and 1 are committed, and Phase 2 (provider validation with idempotent retry-safe attempts) is finished with all 68 tests passing. It's staged and awaiting your approval to commit. (disable recaps in /config)
 
@@ -3954,7 +3954,7 @@
 
   Commit this?
 
-✻ Brewed for 3m 48s
+✻ Crunched for 3m 48s
 ❯ all good so far with the tests, lets check that ExceptionHandler within this  
   message                                                                       
    PASS  test/validation.spec.ts                                                
@@ -4260,7 +4260,7 @@
 
   Commit this?
 
-✻ Worked for 3m 17s
+✻ Brewed for 3m 17s
 ❯ yes, all good, lets commit the recent changes                                 
 
   Ran 1 shell command (ctrl+o to expand)
@@ -5262,3 +5262,696 @@
   Commit this?
 
 ✻ Worked for 10m 13s
+
+❯ /export ai-log/AI_LOG.md                                                      
+  ⎿  Conversation exported to: /Users/ottozuniga/Documents/interviews/qualitara/
+     interview-partner-onboarding/ai-log/AI_LOG.md
+
+❯ commit all the recent changes, include the @ai-log/AI_LOG.md file             
+
+  Ran 1 shell command (ctrl+o to expand)
+⏺ The log is a 300KB / 5,263-line transcript. Since committing it publishes
+  whatever it contains, let me scan it for anything sensitive first.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+⏺ Scan is clean — no real tokens, keys, or passwords. The connection strings are
+  localhost with trust auth (no password), and sk_live_9876543210 is the fake
+  value I invented for tests. Committing.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+⏺ Committed. One note: the log contains your email address once
+  (admin@softcori.com, pulled in from your global CLAUDE.md) — harmless, but
+  worth knowing since this repo is going to an interviewer.
+
+  Before the README, one gap: my manual-verification checklist tells a reviewer
+  to try each credential scenario, but once they go live there's no way back
+  without dropping tables. Adding the reset endpoint I planned.
+
+⏺ Update(apps/api/src/onboarding/session.service.ts)
+  ⎿  Added 29 lines
+       74    }
+       75  
+       76    /**
+       77 +   * Abandons everything and starts over.                     
+       78 +   *                                                          
+       79 +   * A demo affordance, not a product feature: it exists so a 
+          +reviewer can walk                                             
+       80 +   * each Provider scenario without dropping tables between ru
+          +ns. Nothing is                                                
+       81 +   * deleted — past sessions are marked ABANDONED and stay aud
+          +itable.                                                       
+       82 +   *                                                          
+       83 +   * Real onboarding would gate this behind an operator role; 
+          +there is no auth                                              
+       84 +   * in this exercise to hang that off, which is called out in
+          + the README.                                                  
+       85 +   */                                                         
+       86 +  async resetSession(): Promise<SessionView> {                
+       87 +    const partner = await this.getPartner();                  
+       88 +                                                              
+       89 +    await this.prisma.$transaction([                          
+       90 +      this.prisma.onboardingSession.updateMany({              
+       91 +        // Completed sessions are abandoned too, otherwise the
+          + lookup below                                                 
+       92 +        // would keep resolving to the old "you're live" sessi
+          +on.                                                           
+       93 +        where: { partnerId: partner.id, status: { in: ['IN_PRO
+          +GRESS', 'COMPLETED'] } },                                     
+       94 +        data: { status: 'ABANDONED' },                        
+       95 +      }),                                                     
+       96 +      this.prisma.partner.update({                            
+       97 +        where: { id: partner.id },                            
+       98 +        data: { isLive: false, liveAt: null },                
+       99 +      }),                                                     
+      100 +    ]);                                                       
+      101 +                                                              
+      102 +    return this.getView();                                    
+      103 +  }                                                           
+      104 +                                                              
+      105 +  /**                                                         
+      106     * The session the partner should currently see:
+      107     *   1. their open session, if they have one;
+      108     *   2. otherwise their most recent completed one, so reload
+           ing after go-live
+
+⏺ Update(apps/api/src/onboarding/session.controller.ts)
+  ⎿  Added 7 lines
+      50      return this.validation.startValidation(body);
+      51    }
+      52  
+      53 +  /** Demo helper — abandons the current session so the flow ca
+         +n be walked again. */                                          
+      54 +  @Post('reset')                                               
+      55 +  @HttpCode(200)                                               
+      56 +  reset(): Promise<SessionView> {                              
+      57 +    return this.sessions.resetSession();                       
+      58 +  }                                                            
+      59 +                                                               
+      60    /** Step 3. All-or-nothing, and safe to submit twice. */
+      61    @Post('complete')
+      62    @HttpCode(200)
+
+⏺ Update(apps/api/test/go-live.spec.ts)
+  ⎿  Added 35 lines
+      194      });
+      195    });
+      196  
+      197 +  describe('reset', () => {                                   
+      198 +    const postReset = () => request(ctx.app.getHttpServer()).p
+          +ost('/api/onboarding/session/reset');                         
+      199 +                                                              
+      200 +    it('starts a fresh session after going live', async () => 
+          +{                                                             
+      201 +      await reachReview('acct_valid');                        
+      202 +      await postComplete().expect(200);                       
+      203 +                                                              
+      204 +      const view = (await postReset().expect(200)).body as Ses
+          +sionView;                                                     
+      205 +                                                              
+      206 +      expect(view.step).toBe('DETAILS');                      
+      207 +      expect(view.status).toBe('IN_PROGRESS');                
+      208 +      expect(view.companyName).toBeNull();                    
+      209 +      expect(view.hasApiKey).toBe(false);                     
+      210 +      await expect(partner()).resolves.toMatchObject({ isLive:
+          + false, liveAt: null });                                      
+      211 +    });                                                       
+      212 +                                                              
+      213 +    it('abandons an in-progress session without deleting the h
+          +istory', async () => {                                        
+      214 +      await reachReview('acct_valid');                        
+      215 +                                                              
+      216 +      await postReset().expect(200);                          
+      217 +                                                              
+      218 +      const abandoned = await ctx.prisma.onboardingSession.fin
+          +dMany({                                                       
+      219 +        where: { status: 'ABANDONED' },                       
+      220 +      });                                                     
+      221 +      expect(abandoned).toHaveLength(1);                      
+      222 +      // The attempt is retained alongside it rather than casc
+          +aded away.                                                    
+      223 +      await expect(ctx.prisma.validationAttempt.count()).resol
+          +ves.toBe(1);                                                  
+      224 +    });                                                       
+      225 +                                                              
+      226 +    it('is harmless when there is nothing to reset', async () 
+          +=> {                                                          
+      227 +      const view = (await postReset().expect(200)).body as Ses
+          +sionView;                                                     
+      228 +      expect(view.step).toBe('DETAILS');                      
+      229 +    });                                                       
+      230 +  });                                                         
+      231 +                                                              
+      232    describe('a live session is closed to further edits', () => 
+           {
+      233      beforeEach(async () => {
+      234        await reachReview('acct_valid');
+
+  Ran 1 shell command (ctrl+o to expand)
+
+⏺ 87 passing. Now making reset reachable from the UI — otherwise a reviewer is
+  stuck on the live screen.
+
+⏺ Update(apps/web/src/api/client.ts)
+  ⎿  Added 4 lines
+      76  
+      77    complete: (body: CompleteRequest): Promise<SessionView> =>
+      78      send(`${SESSION}/complete`, sessionViewSchema, { method: 'P
+          OST', body }),
+      79 +                                                               
+      80 +  /** Demo helper — see the README. */                         
+      81 +  reset: (): Promise<SessionView> =>                           
+      82 +    send(`${SESSION}/reset`, sessionViewSchema, { method: 'POST
+         +', body: {} }),                                                
+      83  };
+
+⏺ Update(apps/web/src/api/use-session.ts)
+  ⎿  Added 5 lines
+      44    return useSessionMutation((body: CompleteRequest) => api.comp
+          lete(body));
+      45  }
+      46  
+      47 +/** Demo helper — lets the flow be walked again without touchin
+         +g the database. */                                             
+      48 +export function useResetSession() {                            
+      49 +  return useSessionMutation(() => api.reset());                
+      50 +}                                                              
+      51 +                                                               
+      52  /**
+      53   * Starting a validation returns the attempt, not the session, 
+          so the session
+      54   * is refetched to pick up the RUNNING state and begin polling.
+
+⏺ Write(apps/web/src/components/LiveStep.tsx)
+  ⎿  Added 23 lines, removed 5 lines
+       1  import type { SessionView } from '@onboarding/contracts';
+       2 +import { useResetSession } from '../api/use-session';          
+       3  
+       4  export function LiveStep({ session }: { session: SessionView })
+           {
+       5 +  const reset = useResetSession();                             
+       6 +                                                               
+       7    return (
+       5 -    <section className="live">                                 
+       6 -      <h2>You&rsquo;re live</h2>                               
+       7 -      <p className="live-subtitle">                            
+       8 -        {session.companyName ? `${session.companyName} is conne
+         -cted` : 'Company is connected'}                                
+       8 +    <>                                                         
+       9 +      <section className="live">                               
+      10 +        <h2>You&rsquo;re live</h2>                             
+      11 +        <p className="live-subtitle">                          
+      12 +          {session.companyName ? `${session.companyName} is con
+         +nected` : 'Company is connected'}                              
+      13 +        </p>                                                   
+      14 +      </section>                                               
+      15 +                                                               
+      16 +      {/* Not a product feature — it exists so the flow can be 
+         +walked again                                                   
+      17 +          with different Provider credentials. See the README. 
+         +*/}                                                            
+      18 +      <p className="demo-reset">                               
+      19 +        <button                                                
+      20 +          type="button"                                        
+      21 +          className="secondary"                                
+      22 +          disabled={reset.isPending}                           
+      23 +          onClick={() => reset.mutate(undefined)}              
+      24 +        >                                                      
+      25 +          {reset.isPending ? 'Starting over…' : 'Start over (de
+         +mo)'}                                                          
+      26 +        </button>                                              
+      27        </p>
+      10 -    </section>                                                 
+      28 +    </>                                                        
+      29    );
+      30  }
+
+⏺ Update(apps/web/src/styles.css)
+  ⎿  Added 9 lines
+      309    margin: 0.35rem 0 0;
+      310    color: var(--muted);
+      311  }
+      312 +                                                              
+      313 +.demo-reset {                                                 
+      314 +  text-align: center;                                         
+      315 +  margin: 0;                                                  
+      316 +}                                                             
+      317 +                                                              
+      318 +.demo-reset button {                                          
+      319 +  font-size: 0.85rem;                                         
+      320 +}                                                             
+
+  Ran 1 shell command (ctrl+o to expand)
+
+⏺ Now the README — the main remaining deliverable.
+
+⏺ Write(README.md)
+  ⎿  Wrote 319 lines to README.md
+       1 # Partner self-service onboarding
+       3 A resumable three-step onboarding wizard — **Details → Validate 
+         integration → Review and go live** —
+       4 backed by a NestJS REST API and PostgreSQL, with a mock external
+       5 against before going live.
+       6 
+         ies, each of which has tests that
+       8 fail if you remove the mechanism protecting it:
+       9 
+         to, and a full server restart land the
+     … +432 lines (ctrl+o to expand)
+
+⏺ Fixing an inconsistency I introduced (prerequisites said 24, the note says
+  26), then verifying the README's setup instructions actually work from
+  scratch.
+
+⏺ Update(README.md)
+  ⎿  Added 1 line, removed 1 line
+      19  
+      20  ### Prerequisites
+      21  
+      22 -- **Node 20+** (developed on 24 — see [Node 26](#a-note-on-node
+         --26) below)                                                    
+      22 +- **Node 20+** (developed on 26 — see [the note below](#a-note-
+         +on-node-26))                                                   
+      23  - **PostgreSQL 14+** running locally. No Docker needed.
+      24  - **pnpm 10+** (`npm i -g pnpm`)
+      25  
+
+  Ran 1 shell command (ctrl+o to expand)
+
+⏺ Let me confirm the seed actually landed in the fresh database, not the dev
+  one.
+  Ran 2 shell commands (ctrl+o to expand)
+
+⏺ README setup verified from a genuinely empty database — migrations, both
+  partial indexes, and seed all landed. Cleaning up and running final
+  verification.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+⏺ Now verifying the "Start over" button I just added actually works in the
+  browser.
+
+  Called claude-in-chrome 2 times, ran 1 shell command (ctrl+o to expand)
+
+⏺ Reset works. Cleaning up and doing the final review pass.
+
+  Ran 3 shell commands (ctrl+o to expand)
+
+⏺ Everything matches. Two honesty fixes: the root lint script is a no-op (no
+  package defines one), and db:setup is missing from the commands table.
+
+⏺ Update(package.json)
+  ⎿  Removed 1 line
+      17      "db:seed": "pnpm --filter @onboarding/api db:seed",
+      18      "db:reset": "pnpm --filter @onboarding/api db:reset",
+      19      "db:studio": "pnpm --filter @onboarding/api db:studio",
+      20 -    "lint": "pnpm -r --if-present lint",                       
+      20      "typecheck": "pnpm -r --if-present typecheck"
+      21    }
+      22  }
+
+⏺ Update(README.md)
+  ⎿  Added 1 line
+      52  | `pnpm test` | **Runs the test suite** (see [Tests](#tests)) |
+      53  | `pnpm build` | Builds all three packages |
+      54  | `pnpm typecheck` | Typechecks all three packages |
+      55 +| `pnpm db:setup` | Migrates then seeds — the one-shot first-ru
+         +n command |                                                    
+      56  | `pnpm db:migrate` | Applies migrations to the dev database |
+      57  | `pnpm db:seed` | Seeds the hardcoded partner (idempotent) |
+      58  | `pnpm db:reset` | Drops and rebuilds the dev database |
+
+⏺ Update(README.md)
+  ⎿  Added 4 lines
+      289  instances, because the index serialises starts and the reaper 
+           recovers orphans. But recovery from a
+      290  crashed instance waits for the stale threshold rather than bei
+           ng picked up immediately.
+      291  
+      292 +**No linter or formatter.** TypeScript runs in strict mode and
+          + `pnpm typecheck` covers all three                            
+      293 +packages, but there is no ESLint or Biome config. I removed th
+          +e root `lint` script rather than leave                        
+      294 +one that silently passes without checking anything.           
+      295 +                                                              
+      296  **No rate limiting, no observability beyond structured logs**,
+            and no pagination on items (the
+      297  Provider returns a handful).
+      298  
+
+  Ran 1 shell command (ctrl+o to expand)
+
+⏺ Everything green and the working tree is clean of build artifacts.
+
+  Phase 5 complete. Two things I verified rather than assumed:
+
+  The README's setup instructions actually work from scratch. I created a
+  brand-new empty database and followed them verbatim — migrations applied, both
+  partial unique indexes created, partner seeded. A README that says pnpm 
+  db:setup without anyone ever running it against an empty DB is a guess.
+
+  Cross-checked every factual claim against the code: all 8 env vars match
+  .env.example, every endpoint in the API table matches a real route, the test
+  count is real.
+
+  That check caught two honesty problems, both fixed:
+
+  1. pnpm lint was a no-op. pnpm -r --if-present lint with no package defining
+  lint exits successfully having checked nothing. Someone running it would
+  reasonably conclude the code was linted. I removed the script and documented
+  "no linter configured" in the deferred section — a script that silently passes
+  is worse than no script.
+  2. db:setup was used in the setup steps but missing from the commands table.
+
+  Also added the reset endpoint (POST .../reset + a "Start over (demo)" button).
+  Without it, a reviewer who goes live cannot try another credential scenario
+  without dropping tables — which made my own manual checklist unrunnable. It
+  abandons rather than deletes, so history stays auditable; verified in the
+  browser and by checking the rows (IN_PROGRESS x1, ABANDONED x1, partner no
+  longer live). 3 tests cover it.
+
+  The README covers: setup and env vars, the credential-trigger table, how each
+  of the three hard parts works, design decisions with trade-offs weighed on
+  both sides, deliberate deferrals with reasoning, and what another day would
+  buy. It's candid that plaintext credential storage is the deferral with real
+  consequences, and notes the seam is ready for it.
+
+  Final state: 87 tests, 6 suites, ~3.5s, typecheck and build clean, servers
+  stopped, dev DB reseeded.
+
+  Proposed commit:
+
+  docs: add README and a demo reset endpoint
+
+  The README covers local setup, the Provider credential table, how each of
+  the three hard parts works, design decisions with their trade-offs, what
+  was deferred and why, and what another day would buy. Setup steps were
+  verified against a brand new empty database rather than assumed.
+
+  Adds POST .../reset so the flow can be walked again with different
+  Provider credentials without dropping tables — the manual checklist in
+  the README is unrunnable otherwise. It abandons rather than deletes, so
+  past sessions and their attempts stay auditable.
+
+  Removes the root lint script: with no package defining one it passed
+  without checking anything, which is worse than not having it.
+
+  Commit this?
+
+✻ Baked for 6m 27s
+
+❯ everything working as expected, commit the latest changes                     
+
+  Ran 1 shell command (ctrl+o to expand)
+
+⏺ All phases complete, working tree clean. Let me save the working-style
+  guidance for future sessions on this project.
+
+  Listed 1 directory, wrote 2 memories (ctrl+o to expand)
+
+⏺ All six phases are done. Six commits, clean tree, 87 tests passing.
+
+  What was delivered
+
+  ┌─────────────────────┬───────────────────────────────────────────────────┐
+  │     Deliverable     │                       State                       │
+  ├─────────────────────┼───────────────────────────────────────────────────┤
+  │ Backend, frontend,  │ Cloneable and runnable; setup verified against an │
+  │ migrations          │  empty DB                                         │
+  ├─────────────────────┼───────────────────────────────────────────────────┤
+  │ README              │ Setup, credential table, design decisions with    │
+  │                     │ trade-offs, deferrals, next-day work              │
+  ├─────────────────────┼───────────────────────────────────────────────────┤
+  │ AI log              │ ai-log/AI_LOG.md, committed                       │
+  ├─────────────────────┼───────────────────────────────────────────────────┤
+  │ Tests               │ 87 across 6 suites, ~3.5s, real Postgres — pnpm   │
+  │                     │ test                                              │
+  └─────────────────────┴───────────────────────────────────────────────────┘
+
+  The three hard parts
+
+  Resume — the wizard step is derived, never stored, so it can't drift from the
+  data. Two behaviours fall out of that definition rather than needing their own
+  code: editing credentials invalidates a prior result (new fingerprint stops
+  matching), and a transient failure can't demote you (it isn't a decisive
+  answer). Verified by killing the API mid-flow in a browser.
+
+  Idempotent validation — the partial unique index makes concurrent clicks safe,
+  but a test proved that alone was probabilistic: with a fast Provider the
+  first attempt settles before the second click lands. Reusing the existing
+  answer closed it.
+
+  Consistent go-live — one transaction, conditional on status and version.
+  Mutation-tested: removing the version guard fails the concurrency test, moving
+  the partner update outside the transaction fails the rollback test.
+
+  What I'd flag if you're presenting this
+
+  The strongest material isn't the features — it's four places where checking
+  beat assuming:
+
+  - The double-click test failed and was right; weakening it would have shipped
+  a claim the code didn't make.
+  - Mutation-testing the go-live guarantees — a passing suite and a suite that
+  asserts nothing look identical from outside.
+  - The ExceptionsHandler line you asked about wasn't noise: a rolled-back
+  go-live returned a bare 500, so the retry-safety we'd engineered never reached
+  the partner. Now 503 with an explicit "nothing was changed".
+  - Driving the real app caught the dead-button trap (retry after INVALID would
+  silently return the cached rejection) — invisible to the API tests.
+
+  Two things worth knowing: the plaintext API key is the one deferral with real
+  consequences (the seam is ready — single read/write site, fingerprint already
+  hashed), and ai-log/AI_LOG.md contains your email once, from your global
+  CLAUDE.md.
+
+  I also saved a note about your commit-approval workflow for future sessions on
+  this project.
+
+✻ Baked for 1m 4s
+
+❯ lets replace the hardcoded company name "Acme Logistics" to the one used by   
+  the customer in the form, make sure none of the tests breaks and if any       
+  breaks check it out to see what happened and fix it                           
+
+⏺ Let me look at exactly where the hardcoded name lives and what depends on it.
+
+  Read 1 file, ran 1 shell command (ctrl+o to expand)
+
+⏺ Now I understand the shape of the problem. Partner.name is currently doing
+  double duty — it's both the display name and the unique lookup key that
+  getPartner() uses to find the single partner (findUnique({ where: { name } }),
+  session.service.ts:215). Making it follow the form means it can no longer be
+  the key.
+
+  Nothing in the UI or SessionView exposes Partner.name today, so this is a
+  data-model correctness change rather than a visible one. Two decisions
+  genuinely change the implementation:
+
+⏺ User answered Claude's questions:
+  ⎿  · When should the Partner record take the company name from the form? → At 
+     go-live (Recommended)
+     · Partner.name is currently NOT NULL and UNIQUE because it is the lookup 
+     key. What should replace that? → Keep name NOT NULL + UNIQUE as the key, 
+     add displayName
+⏺ Noted — you've opted to keep the stable key and add displayName. One
+  consequence to record explicitly: PARTNER_NAME / "Acme Logistics" survives as
+  the internal lookup key, so it stays in .env and the seed. It's never
+  user-visible, but it isn't removed either.
+
+  Writing the plan.
+
+⏺ Updated plan
+  ⎿  /plan to preview
+  ⎿  User rejected Claude's plan:
+     ╭─────────────────────────────────────────────────────────────────────────╮
+     │ Partner display name from the onboarding form                           │
+     │                                                                         │
+     │ Context                                                                 │
+     │                                                                         │
+     │ The partner onboarding system is built and committed (7 commits, 87     │
+     │ tests passing). This is a                                               │
+     │ follow-up change to one piece of the data model.                        │
+     │                                                                         │
+     │ Today the Partner row carries a single name column that is doing two    │
+     │ incompatible jobs at once:                                              │
+     │                                                                         │
+     │ - Identity — it is @unique and getPartner() looks the partner up by it  │
+     │ (findUnique({ where: { name } }),                                       │
+     │ apps/api/src/onboarding/session.service.ts:215), seeded from            │
+     │ the PARTNER_NAME env var.                                               │
+     │ - Display — it is nominally "the company's name", but it is a hardcoded │
+     │ fixture value                                                           │
+     │ ("Acme Logistics") that has nothing to do with what the customer        │
+     │ actually typed.                                                         │
+     │                                                                         │
+     │ Meanwhile the real company name the customer enters lives only on       │
+     │ OnboardingSession.companyName.                                          │
+     │ So once a partner goes live, the durable Partner record still does not  │
+     │ know who they are.                                                      │
+     │                                                                         │
+     │ Intended outcome: the Partner record records the company name the       │
+     │ customer entered on the                                                 │
+     │ form, captured at the moment they go live.                              │
+     │                                                                         │
+     │ Decisions taken                                                         │
+     │                                                                         │
+     │ ┌────────────────┬───────────────────────────────────────────────────── │
+     │ ───┐                                                                    │
+     │ │    Decision    │                         Choice                       │
+     │   │                                                                     │
+     │ ├────────────────┼───────────────────────────────────────────────────── │
+     │ ───┤                                                                    │
+     │ │                │ At go-live, inside the existing transaction. The     │
+     │   │                                                                     │
+     │ │ When the name  │ Partner is the durable "who is live" record; the     │
+     │   │                                                                     │
+     │ │ is captured    │ session is the working draft, so an abandoned draft  │
+     │   │                                                                     │
+     │ │                │ never mutates it.                                    │
+     │   │                                                                     │
+     │ ├────────────────┼───────────────────────────────────────────────────── │
+     │ ───┤                                                                    │
+     │ │ How to keep    │ Keep name as the NOT NULL / UNIQUE internal key and  │
+     │   │                                                                     │
+     │ │ the lookup     │ add a nullable displayName. Smaller migration, and   │
+     │   │                                                                     │
+     │ │ working        │ getPartner() is untouched.                           │
+     │   │                                                                     │
+     │ └────────────────┴───────────────────────────────────────────────────── │
+     │ ───┘                                                                    │
+     │                                                                         │
+     │ Explicit consequence of that second choice: PARTNER_NAME and the        │
+     │ literal "Acme Logistics"                                                │
+     │ remain as the internal lookup key — in env.ts, .env.example, seed.ts    │
+     │ and test-app.ts. They are                                               │
+     │ never user-visible and never displayed, but they are not removed. The   │
+     │ alternative (nullable,                                                  │
+     │ non-unique name resolved by "the single row") would have eliminated     │
+     │ them entirely at the cost of a                                          │
+     │ larger migration; that was considered and not chosen.                   │
+     │                                                                         │
+     │ ---                                                                     │
+     │ Changes                                                                 │
+     │                                                                         │
+     │ 1. Schema and migration                                                 │
+     │                                                                         │
+     │ apps/api/prisma/schema.prisma — add one nullable column to Partner:     │
+     │                                                                         │
+     │ prisma                                                                  │
+     │ /// The company name the partner entered on the form, captured when     │
+     │ they went                                                               │
+     │ /// live. Null until then. Distinct from `name`, which is the internal  │
+     │ lookup                                                                  │
+     │ /// key and is not customer-facing.                                     │
+     │ displayName String?                                                     │
+     │                                                                         │
+     │ Then pnpm db:migrate --name add_partner_display_name. This generates a  │
+     │ plain                                                                   │
+     │ ALTER TABLE "partners" ADD COLUMN "displayName" TEXT; — additive and    │
+     │ safe against existing rows.                                             │
+     │                                                                         │
+     │ ▎ Note: apps/api/prisma/migrations/20260725000022_init/migration.sql    │
+     │ ▎ contains two hand-written                                             │
+     │ ▎ partial unique indexes appended below the generated SQL. They are     │
+     │ ▎ unaffected here, but the new                                          │
+     │ ▎ migration must not be squashed into that file.                        │
+     │                                                                         │
+     │ 2. Capture the name at go-live                                          │
+     │                                                                         │
+     │ apps/api/src/onboarding/go-live.service.ts — the transaction already    │
+     │ updates the partner. Add one                                            │
+     │ field to the existing write, so the name lands in the same              │
+     │ all-or-nothing transition as isLive:                                    │
+     │                                                                         │
+     │ await tx.partner.update({                                               │
+     │   where: { id: fresh.partnerId },                                       │
+     │   data: {                                                               │
+     │     displayName: fresh.companyName,   // new                            │
+     │     isLive: true,                                                       │
+     │     liveAt: new Date(),                                                 │
+     │   },                                                                    │
+     │ });                                                                     │
+     │                                                                         │
+     │ No guard is needed on fresh.companyName being null: saveDetails         │
+     │ requires a non-empty company                                            │
+     │ name, and go-live requires a validation that requires credentials that  │
+     │ require saveDetails. The                                                │
+     │ column is nullable anyway, so the types line up without a cast.         │
+     │                                                                         │
+     │ 3. Clear it on reset                                                    │
+     │                                                                         │
+     │ apps/api/src/onboarding/session.service.ts — resetSession() already     │
+     │ clears isLive and liveAt.                                               │
+     │ Add displayName: null so "Start over" genuinely starts over rather than │
+     │ leaving a stale name from                                               │
+     │ the previous run.                                                       │
+     │                                                                         │
+     │ 4. README                                                               │
+     │                                                                         │
+     │ Update the data-model description to distinguish name (internal key)    │
+     │ from displayName, and note                                              │
+     │ in the deferred section that the partner is still identified by a       │
+     │ hardcoded key because auth is out                                       │
+     │ of scope.                                                               │
+     │                                                                         │
+     │ ---                                                                     │
+     │ Tests                                                                   │
+     │                                                                         │
+     │ The change is additive, so no existing test is expected to break. The   │
+     │ partner assertions in                                                   │
+     │ apps/api/test/go-live.spec.ts all use toMatchObject, which tolerates    │
+     │ the new field. The plan is to                                           │
+     │ run the suite first and confirm that prediction rather than assume it — │
+     │ if something does break, read                                           │
+     │ the failure before touching it, since an unexpected break would mean    │
+     │ the model has a coupling I have                                         │
+     │ not accounted for.                                                      │
+     │                                                                         │
+     │ New assertions in apps/api/test/go-live.spec.ts:                        │
+     │                                                                         │
+     │ - Going live copies the entered company name onto the partner (use a    │
+     │ distinctive name, not                                                   │
+     │ "Acme Logistics", so the test cannot pass by coincidence against the    │
+     │ seeded key).                                                            │
+     │ - The partner has no displayName before go-live.                        │
+     │ - A PARTIAL result acknowledged and taken live also captures the name.  │
+     │ - The rollback test additionally asserts displayName stays null — it is │
+     │ part of the all-or-nothing                                              │
+     │ transition, so a partial commit must not leave it behind.               │
+     │ - Reset clears displayName.                                             │
+     │                                                                         │
+     │ ---                                                                     │
+     │ Verification                                                            │
+     │                                                                         │
+     │ 1. pnpm test — 87 existing tests still pass, plus the new ones. If any  │
+     │ existing test fails,                                                    │
+     │ diagnose the cause before changing it; do not adjust a test to fit the  │
+     │ implementation.                                                         │
+     │ 2. pnpm typecheck and pnpm build clean.                                 │
+     │ 3. Confirm the migration is additive and did not disturb the partial    │
+     │ unique indexes:                                                         │
+     │ psql -d onboarding_dev -c "\d partners"                                 │
+     │ psql -d onboarding_dev -tAc "select indexname from pg_indexes where     │
+     │ indexname like 'one_%'"                                                 │
+     │ 4. End-to-end in the browser: pnpm dev, walk Details → Validate → Go    │
+     │ live with a distinctive                                                 │
+     │ company name, then confirm the durable record:                          │
+     │ psql -d onboarding_dev -tAc 'select name, "displayName", "isLive" from  │
+     │ partners'                                                               │
+     │ # expect: Acme Logistics | <what was typed> | t                         │
+     │ 4. Then click Start over (demo) and confirm displayName is back to      │
+     │ null.                                                                   │
+     │ 5. Code review before committing, fix Critical/Important findings, then │
+     │ stop for approval.                                                      │
+     ╰─────────────────────────────────────────────────────────────────────────╯
+
+⏺ Understood — dropping it. No changes made; the codebase stays exactly as
+  committed at cd881e9.
+
+  The plan file at /Users/ottozuniga/.claude/plans/build-a-partner-self-service-
+  structured-sphinx.md still holds the write-up if you want to revisit it later,
+  but nothing was implemented.
+
+✻ Worked for 2m 55s
