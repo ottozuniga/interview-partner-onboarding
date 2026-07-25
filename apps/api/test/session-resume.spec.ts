@@ -126,10 +126,40 @@ describe('Session resume', () => {
     it.each([
       ['missing company name', { ...DETAILS, companyName: '' }],
       ['missing account id', { ...DETAILS, accountId: '   ' }],
-      ['missing api key', { companyName: 'Acme', accountId: 'acct_valid' }],
+      ['missing api key on a session that has none', { companyName: 'Acme', accountId: 'acct' }],
+      ['an empty api key', { ...DETAILS, apiKey: '' }],
       ['wrong types', { companyName: 42, accountId: true, apiKey: null }],
     ])('rejects %s with 400', async (_label, body) => {
       await putDetails(body).expect(400);
+    });
+
+    // The key never comes back from the server, so the form cannot resubmit
+    // it. Omitting it must mean "keep the stored one" rather than "clear it".
+    it('keeps the stored api key when the field is omitted', async () => {
+      await putDetails(DETAILS).expect(200);
+
+      const view = (
+        await putDetails({ companyName: 'Acme Logistics Ltd', accountId: DETAILS.accountId }).expect(
+          200,
+        )
+      ).body as SessionView;
+
+      expect(view.companyName).toBe('Acme Logistics Ltd');
+      expect(view.hasApiKey).toBe(true);
+
+      const stored = await ctx.prisma.onboardingSession.findFirstOrThrow();
+      expect(stored.providerApiKey).toBe(DETAILS.apiKey);
+    });
+
+    it('re-fingerprints against the stored key when only the account id changes', async () => {
+      await putDetails(DETAILS).expect(200);
+      const before = await ctx.prisma.onboardingSession.findFirstOrThrow();
+
+      await putDetails({ companyName: DETAILS.companyName, accountId: 'acct_partial' }).expect(200);
+      const after = await ctx.prisma.onboardingSession.findFirstOrThrow();
+
+      expect(after.providerApiKey).toBe(DETAILS.apiKey);
+      expect(after.credentialsFingerprint).not.toBe(before.credentialsFingerprint);
     });
 
     it('does not persist anything when the payload is rejected', async () => {

@@ -25,7 +25,12 @@ export const ADVANCEABLE_ATTEMPT_STATUSES = ['VALID', 'PARTIAL'] as const;
 export const saveDetailsRequestSchema = z.object({
   companyName: z.string().trim().min(1, 'Company name is required').max(200),
   accountId: z.string().trim().min(1, 'Provider account ID is required').max(200),
-  apiKey: z.string().trim().min(1, 'Provider API key is required').max(500),
+  /**
+   * Optional only when a key is already stored: the server never sends the key
+   * back, so omitting it means "keep the one you have". Required on a session
+   * that has none.
+   */
+  apiKey: z.string().trim().min(1, 'Provider API key is required').max(500).optional(),
 });
 export type SaveDetailsRequest = z.infer<typeof saveDetailsRequestSchema>;
 

@@ -30,3 +30,282 @@ main {
   max-width: 44rem;
   margin: 0 auto;
 }
+
+h1 {
+  font-size: 1.5rem;
+  margin-bottom: 0.25rem;
+}
+
+h2 {
+  font-size: 1.2rem;
+  margin-bottom: 0.25rem;
+}
+
+h3 {
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* --- Stepper ----------------------------------------------------------- */
+
+.stepper {
+  display: flex;
+  gap: 0.5rem;
+  list-style: none;
+  padding: 0;
+  margin: 1.5rem 0;
+  flex-wrap: wrap;
+}
+
+.stepper-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.stepper-item.is-current {
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.stepper-item.is-done {
+  border-color: var(--ok);
+  color: var(--ok);
+}
+
+.stepper-index {
+  display: inline-grid;
+  place-items: center;
+  width: 1.3rem;
+  height: 1.3rem;
+  border-radius: 50%;
+  background: var(--bg-subtle);
+  font-size: 0.75rem;
+}
+
+/* --- Forms ------------------------------------------------------------- */
+
+label {
+  display: block;
+  margin-top: 1rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+input[type='text'],
+input[type='password'],
+input:not([type]) {
+  display: block;
+  width: 100%;
+  padding: 0.5rem;
+  margin-top: 0.25rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font: inherit;
+}
+
+.field-error {
+  color: var(--error);
+  font-size: 0.85rem;
+  margin: 0.25rem 0 0;
+}
+
+.hint {
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin: 0.25rem 0 0;
+}
+
+.checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  font-weight: 400;
+}
+
+.checkbox input {
+  width: auto;
+  margin: 0;
+}
+
+/* --- Buttons ----------------------------------------------------------- */
+
+button {
+  margin-top: 1.25rem;
+  padding: 0.55rem 1rem;
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  background: var(--accent);
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+button.secondary {
+  background: #fff;
+  color: var(--fg);
+  border-color: var(--border);
+  font-weight: 400;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+/* --- Data display ------------------------------------------------------ */
+
+.summary {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.35rem 1rem;
+  margin: 1rem 0;
+  padding: 0.75rem;
+  background: var(--bg-subtle);
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.summary dt {
+  color: var(--muted);
+}
+
+.summary dd {
+  margin: 0;
+}
+
+.items {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+.items li {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.9rem;
+}
+
+.items li:last-child {
+  border-bottom: none;
+}
+
+.items li span:first-child {
+  flex: 1;
+}
+
+.tag {
+  padding: 0.1rem 0.45rem;
+  border-radius: 3px;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+}
+
+.tag-ok {
+  background: #e3f5eb;
+  color: var(--ok);
+}
+
+.tag-failed {
+  background: #fde8e6;
+  color: var(--error);
+}
+
+/* --- Alerts ------------------------------------------------------------ */
+
+.alert {
+  margin: 1rem 0;
+  padding: 0.75rem 1rem;
+  border-left: 3px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg-subtle);
+  font-size: 0.9rem;
+}
+
+.alert-body {
+  margin-top: 0.35rem;
+}
+
+.alert-body p {
+  margin: 0 0 0.35rem;
+}
+
+.alert-body p:last-child {
+  margin-bottom: 0;
+}
+
+.alert ul {
+  margin: 0.25rem 0;
+  padding-left: 1.1rem;
+}
+
+.alert-info {
+  border-color: var(--accent);
+}
+
+.alert-success {
+  border-color: var(--ok);
+}
+
+.alert-warning {
+  border-color: var(--warn);
+}
+
+.alert-error {
+  border-color: var(--error);
+  color: var(--error);
+}
+
+/* --- Live -------------------------------------------------------------- */
+
+.live {
+  margin-top: 2rem;
+  padding: 2rem;
+  text-align: center;
+  border: 1px solid var(--ok);
+  border-radius: 6px;
+  background: #f2fbf6;
+}
+
+.live h2 {
+  color: var(--ok);
+  font-size: 1.6rem;
+  margin: 0;
+}
+
+.live-subtitle {
+  margin: 0.35rem 0 0;
+  color: var(--muted);
+}

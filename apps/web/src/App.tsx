@@ -1,25 +1,29 @@
-import { useEffect, useState } from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Wizard } from './components/Wizard';
 
-/**
- * Phase 0 placeholder. Its only job is to prove the Vite dev proxy reaches the
- * API. The onboarding wizard replaces this in Phase 4.
- */
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: { retry: 1, staleTime: 0 },
+    // Every mutation here is either idempotent or explicitly guarded on the
+    // server, but retrying automatically would still hide failures from the
+    // partner rather than letting them decide.
+    mutations: { retry: false },
+  },
+});
+
 export function App() {
-  const [health, setHealth] = useState<string>('checking…');
-
-  useEffect(() => {
-    fetch('/api/health')
-      .then((res) => res.json())
-      .then((body: { status: string; database: string }) =>
-        setHealth(`api: ${body.status} · database: ${body.database}`),
-      )
-      .catch((error: unknown) => setHealth(`unreachable (${String(error)})`));
-  }, []);
-
   return (
-    <main>
-      <h1>Partner Onboarding</h1>
-      <p>{health}</p>
-    </main>
+    <QueryClientProvider client={queryClient}>
+      <main>
+        <header>
+          <h1>Partner onboarding</h1>
+          <p className="muted">
+            Your progress is saved on the server — you can close this page and come back at any
+            point.
+          </p>
+        </header>
+        <Wizard />
+      </main>
+    </QueryClientProvider>
   );
 }

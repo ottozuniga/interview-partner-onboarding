@@ -1,4 +1,4 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { SaveDetailsRequest, SessionView } from '@onboarding/contracts';
 import { providerItemSchema } from '@onboarding/contracts';
@@ -38,6 +38,17 @@ export class SessionService {
       );
     }
 
+    // The key is never sent to the client, so the form cannot echo it back.
+    // Omitting it means "keep the stored one", which lets the partner correct
+    // their company name without retyping a secret they cannot see.
+    const apiKey = input.apiKey ?? session.providerApiKey;
+    if (!apiKey) {
+      throw new BadRequestException({
+        message: 'Validation failed',
+        errors: [{ field: 'apiKey', message: 'Provider API key is required' }],
+      });
+    }
+
     // Conditional on the status rather than a bare update on the id: the check
     // above is a read, and the session could have gone live in the gap. Letting
     // Postgres re-test the predicate at write time closes that window.
@@ -46,10 +57,10 @@ export class SessionService {
       data: {
         companyName: input.companyName,
         providerAccountId: input.accountId,
-        providerApiKey: input.apiKey,
+        providerApiKey: apiKey,
         // Deterministic, so resubmitting identical credentials leaves any
         // existing validation result intact rather than silently discarding it.
-        credentialsFingerprint: fingerprintCredentials(input.accountId, input.apiKey),
+        credentialsFingerprint: fingerprintCredentials(input.accountId, apiKey),
       },
     });
 
