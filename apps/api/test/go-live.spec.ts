@@ -5,7 +5,7 @@ import { createTestApp, resetDatabase, type TestApp } from './helpers/test-app';
 import { waitForSettledAttempt } from './helpers/wait';
 
 const details = (accountId: string) => ({
-  companyName: 'Acme Logistics',
+  companyName: 'CompanyABC',
   accountId,
   apiKey: 'sk_live_9876543210',
 });

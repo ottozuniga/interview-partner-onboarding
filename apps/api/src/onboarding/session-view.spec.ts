@@ -8,7 +8,7 @@ function session(overrides: Partial<SessionSnapshot> = {}): SessionSnapshot {
   return {
     id: 'session-1',
     status: 'IN_PROGRESS',
-    companyName: 'Acme Logistics',
+    companyName: 'CompanyABC',
     providerAccountId: 'acct_valid',
     apiKey: 'sk_live_9876543210',
     credentialsFingerprint: FINGERPRINT,

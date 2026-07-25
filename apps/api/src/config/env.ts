@@ -14,7 +14,7 @@ export const envSchema = z.object({
   WEB_ORIGIN: z.string().min(1).default('http://localhost:5173'),
 
   /** The single hardcoded partner. Auth is out of scope. */
-  PARTNER_NAME: z.string().min(1).default('Acme Logistics'),
+  PARTNER_NAME: z.string().min(1).default('CompanyABC'),
 
   /** How long to wait on the Provider before calling it a transient failure. */
   PROVIDER_TIMEOUT_MS: z.coerce.number().int().positive().default(5000),

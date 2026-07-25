@@ -57,7 +57,7 @@ export async function resetDatabase(prisma: PrismaService): Promise<string> {
   await prisma.truncateAllTables();
 
   const partner = await prisma.partner.create({
-    data: { name: process.env.PARTNER_NAME ?? 'Acme Logistics' },
+    data: { name: process.env.PARTNER_NAME ?? 'CompanyABC' },
   });
 
   return partner.id;

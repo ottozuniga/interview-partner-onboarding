@@ -8,7 +8,7 @@ const prisma = new PrismaClient();
  * second partner, which would break the "one open session" lookup.
  */
 async function main(): Promise<void> {
-  const name = process.env.PARTNER_NAME ?? 'Acme Logistics';
+  const name = process.env.PARTNER_NAME ?? 'CompanyABC';
 
   const partner = await prisma.partner.upsert({
     where: { name },

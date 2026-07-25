@@ -3,7 +3,7 @@ import request from 'supertest';
 import { createTestApp, resetDatabase, type TestApp } from './helpers/test-app';
 
 const DETAILS = {
-  companyName: 'Acme Logistics',
+  companyName: 'CompanyABC',
   accountId: 'acct_valid',
   apiKey: 'sk_live_9876543210',
 };
@@ -116,17 +116,17 @@ describe('Session resume', () => {
       await putDetails(DETAILS).expect(200);
       const before = await ctx.prisma.onboardingSession.findFirstOrThrow();
 
-      await putDetails({ ...DETAILS, companyName: 'Acme Logistics Ltd' }).expect(200);
+      await putDetails({ ...DETAILS, companyName: 'CompanyABC Ltd' }).expect(200);
       const after = await ctx.prisma.onboardingSession.findFirstOrThrow();
 
       expect(after.credentialsFingerprint).toBe(before.credentialsFingerprint);
-      expect(after.companyName).toBe('Acme Logistics Ltd');
+      expect(after.companyName).toBe('CompanyABC Ltd');
     });
 
     it.each([
       ['missing company name', { ...DETAILS, companyName: '' }],
       ['missing account id', { ...DETAILS, accountId: '   ' }],
-      ['missing api key on a session that has none', { companyName: 'Acme', accountId: 'acct' }],
+      ['missing api key on a session that has none', { companyName: 'CompanyABC', accountId: 'acct' }],
       ['an empty api key', { ...DETAILS, apiKey: '' }],
       ['wrong types', { companyName: 42, accountId: true, apiKey: null }],
     ])('rejects %s with 400', async (_label, body) => {
@@ -139,12 +139,12 @@ describe('Session resume', () => {
       await putDetails(DETAILS).expect(200);
 
       const view = (
-        await putDetails({ companyName: 'Acme Logistics Ltd', accountId: DETAILS.accountId }).expect(
+        await putDetails({ companyName: 'CompanyABC Ltd', accountId: DETAILS.accountId }).expect(
           200,
         )
       ).body as SessionView;
 
-      expect(view.companyName).toBe('Acme Logistics Ltd');
+      expect(view.companyName).toBe('CompanyABC Ltd');
       expect(view.hasApiKey).toBe(true);
 
       const stored = await ctx.prisma.onboardingSession.findFirstOrThrow();

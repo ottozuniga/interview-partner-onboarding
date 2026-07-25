@@ -2295,7 +2295,7 @@
         pers/test-app';
       4 
       5 const DETAILS = {
-      6   companyName: 'Acme Logistics',
+      6   companyName: 'CompanyABC',
       7   accountId: 'acct_valid',
       8   apiKey: 'sk_live_9876543210',
       9 };
@@ -3721,7 +3721,7 @@
          lpers/test-app';
        5 import { waitForSettledAttempt } from './helpers/wait';
        6 
-       8   companyName: 'Acme Logistics',
+       8   companyName: 'CompanyABC',
        9   accountId,
       10   apiKey: 'sk_live_9876543210',
      … +238 lines (ctrl+o to expand)
@@ -4357,10 +4357,10 @@
            ],
       128        ['missing account id', { ...DETAILS, accountId: '   ' }]
            ,
-      129 -      ['missing api key', { companyName: 'Acme', accountId: 'a
-          -cct_valid' }],                                                
+      129 -      ['missing api key', { companyName: 'CompanyABC', account
+          -Id: 'acct_valid' }],                                          
       129 +      ['missing api key on a session that has none', { company
-          +Name: 'Acme', accountId: 'acct' }],                           
+          +Name: 'CompanyABC', accountId: 'acct' }],                     
       130 +      ['an empty api key', { ...DETAILS, apiKey: '' }],       
       131        ['wrong types', { companyName: 42, accountId: true, apiK
            ey: null }],
@@ -4377,13 +4377,13 @@
       139 +      await putDetails(DETAILS).expect(200);                  
       140 +                                                              
       141 +      const view = (                                          
-      142 +        await putDetails({ companyName: 'Acme Logistics Ltd', 
+      142 +        await putDetails({ companyName: 'CompanyABC Ltd',     
           +accountId: DETAILS.accountId }).expect(                       
       143 +          200,                                                
       144 +        )                                                     
       145 +      ).body as SessionView;                                  
       146 +                                                              
-      147 +      expect(view.companyName).toBe('Acme Logistics Ltd');    
+      147 +      expect(view.companyName).toBe('CompanyABC Ltd');        
       148 +      expect(view.hasApiKey).toBe(true);                      
       149 +                                                              
       150 +      const stored = await ctx.prisma.onboardingSession.findFi
@@ -5731,7 +5731,7 @@
 
 ✻ Baked for 1m 4s
 
-❯ lets replace the hardcoded company name "Acme Logistics" to the one used by   
+❯ lets replace the hardcoded company name "CompanyABC" to the one used by       
   the customer in the form, make sure none of the tests breaks and if any       
   breaks check it out to see what happened and fix it                           
 
@@ -5756,7 +5756,7 @@
      key. What should replace that? → Keep name NOT NULL + UNIQUE as the key, 
      add displayName
 ⏺ Noted — you've opted to keep the stable key and add displayName. One
-  consequence to record explicitly: PARTNER_NAME / "Acme Logistics" survives as
+  consequence to record explicitly: PARTNER_NAME / "CompanyABC" survives as
   the internal lookup key, so it stays in .env and the seed. It's never
   user-visible, but it isn't removed either.
 
@@ -5783,7 +5783,7 @@
      │ the PARTNER_NAME env var.                                               │
      │ - Display — it is nominally "the company's name", but it is a hardcoded │
      │ fixture value                                                           │
-     │ ("Acme Logistics") that has nothing to do with what the customer        │
+     │ ("CompanyABC") that has nothing to do with what the customer            │
      │ actually typed.                                                         │
      │                                                                         │
      │ Meanwhile the real company name the customer enters lives only on       │
@@ -5823,7 +5823,7 @@
      │ ───┘                                                                    │
      │                                                                         │
      │ Explicit consequence of that second choice: PARTNER_NAME and the        │
-     │ literal "Acme Logistics"                                                │
+     │ literal "CompanyABC"                                                    │
      │ remain as the internal lookup key — in env.ts, .env.example, seed.ts    │
      │ and test-app.ts. They are                                               │
      │ never user-visible and never displayed, but they are not removed. The   │
@@ -5913,7 +5913,7 @@
      │                                                                         │
      │ - Going live copies the entered company name onto the partner (use a    │
      │ distinctive name, not                                                   │
-     │ "Acme Logistics", so the test cannot pass by coincidence against the    │
+     │ "CompanyABC", so the test cannot pass by coincidence against the        │
      │ seeded key).                                                            │
      │ - The partner has no displayName before go-live.                        │
      │ - A PARTIAL result acknowledged and taken live also captures the name.  │
@@ -5940,7 +5940,7 @@
      │ company name, then confirm the durable record:                          │
      │ psql -d onboarding_dev -tAc 'select name, "displayName", "isLive" from  │
      │ partners'                                                               │
-     │ # expect: Acme Logistics | <what was typed> | t                         │
+     │ # expect: CompanyABC | <what was typed> | t                             │
      │ 4. Then click Start over (demo) and confirm displayName is back to      │
      │ null.                                                                   │
      │ 5. Code review before committing, fix Critical/Important findings, then │

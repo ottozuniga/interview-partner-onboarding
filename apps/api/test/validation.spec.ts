@@ -10,7 +10,7 @@ import { sleep, waitForSettledAttempt } from './helpers/wait';
 
 const API_KEY = 'sk_live_9876543210';
 const details = (accountId: string) => ({
-  companyName: 'Acme Logistics',
+  companyName: 'CompanyABC',
   accountId,
   apiKey: API_KEY,
 });

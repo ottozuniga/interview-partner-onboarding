@@ -69,7 +69,7 @@ malformed value fails immediately rather than surfacing as a confusing runtime e
 | `TEST_DATABASE_URL` | — | Test database. Must differ from `DATABASE_URL` and contain "test". |
 | `PORT` | `3000` | API port |
 | `WEB_ORIGIN` | `http://localhost:5173` | CORS origin |
-| `PARTNER_NAME` | `Acme Logistics` | The single hardcoded partner |
+| `PARTNER_NAME` | `CompanyABC` | The single hardcoded partner |
 | `PROVIDER_TIMEOUT_MS` | `5000` | How long to wait on the Provider before calling it transient |
 | `PROVIDER_LATENCY_MS` | `1200` | Artificial latency, so the running state is visible in the UI |
 | `ATTEMPT_STALE_GRACE_MS` | `15000` | Added to the timeout before an abandoned attempt is written off |
