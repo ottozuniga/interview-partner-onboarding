@@ -29,6 +29,19 @@ export const saveDetailsRequestSchema = z.object({
 });
 export type SaveDetailsRequest = z.infer<typeof saveDetailsRequestSchema>;
 
+export const startValidationRequestSchema = z
+  .object({
+    /**
+     * Re-run the check even though these exact credentials already have a
+     * result. Without it, a repeated Validate returns the existing result
+     * instead of calling the Provider again — which is what makes a
+     * double-clicked button safe no matter how fast the Provider answers.
+     */
+    revalidate: z.boolean().optional().default(false),
+  })
+  .default({});
+export type StartValidationRequest = z.infer<typeof startValidationRequestSchema>;
+
 export const completeRequestSchema = z.object({
   /**
    * Required to be `true` when the effective validation was PARTIAL: the
@@ -68,7 +81,11 @@ export type EffectiveValidation = z.infer<typeof effectiveValidationSchema>;
 export const validateResponseSchema = z.object({
   attemptId: z.string(),
   status: attemptStatusSchema,
-  /** True when this call joined an already-running attempt rather than starting one. */
+  /**
+   * True when no new Provider call was made — either this request joined an
+   * attempt already in flight, or it reused an answer these exact credentials
+   * had already received.
+   */
   deduplicated: z.boolean(),
 });
 export type ValidateResponse = z.infer<typeof validateResponseSchema>;

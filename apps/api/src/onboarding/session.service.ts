@@ -77,7 +77,7 @@ export class SessionService {
       include: WITH_ATTEMPTS,
     });
     if (open) {
-      return open;
+      return (await this.reapAbandonedAttempts(open)) ?? open;
     }
 
     const completed = await this.prisma.onboardingSession.findFirst({
@@ -90,6 +90,45 @@ export class SessionService {
     }
 
     return this.createOpenSession(partner.id);
+  }
+
+  /**
+   * Writes off attempts that have been RUNNING past any plausible deadline.
+   *
+   * This is the self-healing path for a process that died between inserting an
+   * attempt and recording its outcome. Without it, the partial unique index
+   * would keep that session from ever validating again. Doing it lazily on
+   * read means there is no background job to run, supervise, or forget to
+   * start — and no window in which a restarted server is stuck.
+   *
+   * Returns the reloaded session, or null when nothing needed reaping, so the
+   * common path costs no extra queries.
+   */
+  private async reapAbandonedAttempts(
+    session: SessionWithAttempts,
+  ): Promise<SessionWithAttempts | null> {
+    const staleAfterMs =
+      this.config.get('PROVIDER_TIMEOUT_MS', { infer: true }) +
+      this.config.get('ATTEMPT_STALE_GRACE_MS', { infer: true });
+    const cutoff = new Date(Date.now() - staleAfterMs);
+
+    if (!session.attempts.some((a) => a.status === 'RUNNING' && a.startedAt < cutoff)) {
+      return null;
+    }
+
+    await this.prisma.validationAttempt.updateMany({
+      where: { sessionId: session.id, status: 'RUNNING', startedAt: { lt: cutoff } },
+      data: {
+        status: 'TRANSIENT_FAILURE',
+        reason: 'The validation was interrupted before it finished. It is safe to try again.',
+        finishedAt: new Date(),
+      },
+    });
+
+    return this.prisma.onboardingSession.findUniqueOrThrow({
+      where: { id: session.id },
+      include: WITH_ATTEMPTS,
+    });
   }
 
   private async getViewById(sessionId: string): Promise<SessionView> {

@@ -43,7 +43,7 @@ export interface AttemptSnapshot {
  * result the partner already earned. INVALID *is* included: the Provider
  * actively rejected these credentials, so an earlier VALID no longer holds.
  */
-const DECISIVE_STATUSES: readonly AttemptStatus[] = ['VALID', 'PARTIAL', 'INVALID'];
+export const DECISIVE_STATUSES: readonly AttemptStatus[] = ['VALID', 'PARTIAL', 'INVALID'];
 
 function newestFirst(attempts: readonly AttemptSnapshot[]): AttemptSnapshot[] {
   return [...attempts].sort((a, b) => b.startedAt.getTime() - a.startedAt.getTime());
