@@ -1,0 +1,23 @@
+{
+  "name": "partner-onboarding",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Partner self-service onboarding: resumable wizard, NestJS + Prisma + Postgres, React",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "pnpm --filter @onboarding/contracts build && pnpm --filter @onboarding/api build && pnpm --filter @onboarding/web build",
+    "dev": "pnpm --filter @onboarding/contracts build && pnpm --parallel --filter @onboarding/api --filter @onboarding/web dev",
+    "dev:api": "pnpm --filter @onboarding/api dev",
+    "dev:web": "pnpm --filter @onboarding/web dev",
+    "test": "pnpm --filter @onboarding/contracts build && pnpm --filter @onboarding/api test",
+    "db:setup": "pnpm --filter @onboarding/api db:setup",
+    "db:migrate": "pnpm --filter @onboarding/api db:migrate",
+    "db:seed": "pnpm --filter @onboarding/api db:seed",
+    "db:reset": "pnpm --filter @onboarding/api db:reset",
+    "db:studio": "pnpm --filter @onboarding/api db:studio",
+    "lint": "pnpm -r --if-present lint",
+    "typecheck": "pnpm -r --if-present typecheck"
+  }
+}

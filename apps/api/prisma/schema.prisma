@@ -1,0 +1,96 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum SessionStatus {
+  IN_PROGRESS
+  COMPLETED
+  ABANDONED
+}
+
+enum AttemptStatus {
+  RUNNING
+  VALID
+  PARTIAL
+  INVALID
+  TRANSIENT_FAILURE
+}
+
+/// The onboarding partner. Auth is out of scope, so exactly one row is seeded
+/// and every request resolves to it.
+model Partner {
+  id       String    @id @default(uuid())
+  name     String    @unique
+  isLive   Boolean   @default(false)
+  liveAt   DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sessions OnboardingSession[]
+
+  @@map("partners")
+}
+
+/// All wizard state. The client stores nothing, so this row plus its attempts
+/// are the complete answer to "where was this partner up to?".
+model OnboardingSession {
+  id     String        @id @default(uuid())
+  status SessionStatus @default(IN_PROGRESS)
+
+  partnerId String
+  partner   Partner @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+
+  companyName       String?
+  providerAccountId String?
+  /// Stored in plaintext — a deliberate, documented deferral (see README).
+  /// Never leaves the server: the API only ever returns a masked form.
+  providerApiKey    String?
+
+  /// sha256(accountId + ':' + apiKey). Lets an attempt record *which*
+  /// credentials it tested, so editing them invalidates prior results
+  /// without any explicit cache-busting logic.
+  credentialsFingerprint String?
+
+  /// Optimistic-concurrency guard for the go-live transition.
+  version Int @default(0)
+
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  attempts ValidationAttempt[]
+
+  @@index([partnerId, status])
+  @@map("onboarding_sessions")
+}
+
+/// One Provider validation call. Immutable once terminal, so the row doubles
+/// as the audit trail and `itemsSnapshot` is the only place items are stored.
+model ValidationAttempt {
+  id     String        @id @default(uuid())
+  status AttemptStatus @default(RUNNING)
+
+  sessionId String
+  session   OnboardingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  /// Which credentials this attempt actually tested.
+  credentialsFingerprint String
+
+  /// Populated for INVALID (Provider's reason) and TRANSIENT_FAILURE (why we gave up).
+  reason String?
+  /// string[] — populated for PARTIAL.
+  warnings Json?
+  /// ProviderItem[] — what the Provider returned. Never mutated after write.
+  itemsSnapshot Json?
+
+  startedAt  DateTime  @default(now())
+  finishedAt DateTime?
+
+  @@index([sessionId, startedAt])
+  @@map("validation_attempts")
+}

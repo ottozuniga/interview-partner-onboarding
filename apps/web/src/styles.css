@@ -1,0 +1,32 @@
+/*
+ * Function over form, per the brief. Just enough to make the wizard legible:
+ * a readable measure, clear state colours, and obvious disabled controls.
+ */
+
+:root {
+  --fg: #1a1a1a;
+  --muted: #666;
+  --border: #d4d4d4;
+  --bg-subtle: #f6f6f6;
+  --ok: #0a7c42;
+  --warn: #9a6700;
+  --error: #b42318;
+  --accent: #1f4ed8;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 2rem 1rem;
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  line-height: 1.5;
+  color: var(--fg);
+}
+
+main {
+  max-width: 44rem;
+  margin: 0 auto;
+}
