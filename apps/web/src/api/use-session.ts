@@ -44,6 +44,11 @@ export function useGoLive() {
   return useSessionMutation((body: CompleteRequest) => api.complete(body));
 }
 
+/** Demo helper — lets the flow be walked again without touching the database. */
+export function useResetSession() {
+  return useSessionMutation(() => api.reset());
+}
+
 /**
  * Starting a validation returns the attempt, not the session, so the session
  * is refetched to pick up the RUNNING state and begin polling.

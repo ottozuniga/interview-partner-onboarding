@@ -50,6 +50,13 @@ export class SessionController {
     return this.validation.startValidation(body);
   }
 
+  /** Demo helper — abandons the current session so the flow can be walked again. */
+  @Post('reset')
+  @HttpCode(200)
+  reset(): Promise<SessionView> {
+    return this.sessions.resetSession();
+  }
+
   /** Step 3. All-or-nothing, and safe to submit twice. */
   @Post('complete')
   @HttpCode(200)

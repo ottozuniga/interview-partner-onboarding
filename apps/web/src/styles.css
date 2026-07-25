@@ -309,3 +309,12 @@ button:disabled {
   margin: 0.35rem 0 0;
   color: var(--muted);
 }
+
+.demo-reset {
+  text-align: center;
+  margin: 0;
+}
+
+.demo-reset button {
+  font-size: 0.85rem;
+}

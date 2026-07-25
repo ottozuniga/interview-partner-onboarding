@@ -76,4 +76,8 @@ export const api = {
 
   complete: (body: CompleteRequest): Promise<SessionView> =>
     send(`${SESSION}/complete`, sessionViewSchema, { method: 'POST', body }),
+
+  /** Demo helper — see the README. */
+  reset: (): Promise<SessionView> =>
+    send(`${SESSION}/reset`, sessionViewSchema, { method: 'POST', body: {} }),
 };

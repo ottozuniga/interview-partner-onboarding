@@ -74,6 +74,35 @@ export class SessionService {
   }
 
   /**
+   * Abandons everything and starts over.
+   *
+   * A demo affordance, not a product feature: it exists so a reviewer can walk
+   * each Provider scenario without dropping tables between runs. Nothing is
+   * deleted — past sessions are marked ABANDONED and stay auditable.
+   *
+   * Real onboarding would gate this behind an operator role; there is no auth
+   * in this exercise to hang that off, which is called out in the README.
+   */
+  async resetSession(): Promise<SessionView> {
+    const partner = await this.getPartner();
+
+    await this.prisma.$transaction([
+      this.prisma.onboardingSession.updateMany({
+        // Completed sessions are abandoned too, otherwise the lookup below
+        // would keep resolving to the old "you're live" session.
+        where: { partnerId: partner.id, status: { in: ['IN_PROGRESS', 'COMPLETED'] } },
+        data: { status: 'ABANDONED' },
+      }),
+      this.prisma.partner.update({
+        where: { id: partner.id },
+        data: { isLive: false, liveAt: null },
+      }),
+    ]);
+
+    return this.getView();
+  }
+
+  /**
    * The session the partner should currently see:
    *   1. their open session, if they have one;
    *   2. otherwise their most recent completed one, so reloading after go-live

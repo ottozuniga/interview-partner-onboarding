@@ -17,7 +17,6 @@
     "db:seed": "pnpm --filter @onboarding/api db:seed",
     "db:reset": "pnpm --filter @onboarding/api db:reset",
     "db:studio": "pnpm --filter @onboarding/api db:studio",
-    "lint": "pnpm -r --if-present lint",
     "typecheck": "pnpm -r --if-present typecheck"
   }
 }

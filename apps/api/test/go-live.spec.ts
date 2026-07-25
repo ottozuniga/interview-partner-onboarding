@@ -194,6 +194,41 @@ describe('Go live', () => {
     });
   });
 
+  describe('reset', () => {
+    const postReset = () => request(ctx.app.getHttpServer()).post('/api/onboarding/session/reset');
+
+    it('starts a fresh session after going live', async () => {
+      await reachReview('acct_valid');
+      await postComplete().expect(200);
+
+      const view = (await postReset().expect(200)).body as SessionView;
+
+      expect(view.step).toBe('DETAILS');
+      expect(view.status).toBe('IN_PROGRESS');
+      expect(view.companyName).toBeNull();
+      expect(view.hasApiKey).toBe(false);
+      await expect(partner()).resolves.toMatchObject({ isLive: false, liveAt: null });
+    });
+
+    it('abandons an in-progress session without deleting the history', async () => {
+      await reachReview('acct_valid');
+
+      await postReset().expect(200);
+
+      const abandoned = await ctx.prisma.onboardingSession.findMany({
+        where: { status: 'ABANDONED' },
+      });
+      expect(abandoned).toHaveLength(1);
+      // The attempt is retained alongside it rather than cascaded away.
+      await expect(ctx.prisma.validationAttempt.count()).resolves.toBe(1);
+    });
+
+    it('is harmless when there is nothing to reset', async () => {
+      const view = (await postReset().expect(200)).body as SessionView;
+      expect(view.step).toBe('DETAILS');
+    });
+  });
+
   describe('a live session is closed to further edits', () => {
     beforeEach(async () => {
       await reachReview('acct_valid');
